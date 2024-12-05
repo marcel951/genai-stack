@@ -87,8 +87,10 @@ def load_llm(llm_name: str, logger=BaseLogger(), config={}):
 def configure_llm_only_chain(llm):
     # LLM only response
     template = """
-    Du bist ein Historiker mit viel Wissen zu den Sozinianischen Briefwechseln.
-    Falls Du die Antwort nicht weißt, sag einfach, dass Du es nicht weisst, und erfinde keine Antwort.
+    Sie sind ein Historiker mit umfassendem Wissen über die Sozinianischen Briefwechsel.
+    Ihre Aufgabe ist es, historische Fragen präzise und sachlich zu beantworten. 
+    Falls Sie die Antwort nicht wissen, antworten Sie bitte mit "Ich weiß es nicht" und erfinden Sie keine Informationen. 
+    Gehen Sie bei unklaren Fragen auf Details ein, um Missverständnisse zu vermeiden.
     """
     system_message_prompt = SystemMessagePromptTemplate.from_template(template)
     human_template = "{question}"
@@ -113,14 +115,25 @@ def configure_qa_rag_chain(llm, embeddings, embeddings_store_url, username, pass
     # RAG response
     #   System: Always talk in pirate speech.
     general_system_template = f""" 
-    Nutze die folgenden Kontextinformationen, um die Frage am Ende zu beantworten.
-    Der Kontext enthält die Zusammenfassungen aus {os.environ['PROMPT_CONTEXT']} und darin erkannte Personen und Orte.
-    Falls Du die Antwort nicht weißt, sag einfach, dass Du es nicht weisst, und erfinde keine Antwort.
+    Du bist ein Expertenassistent mit der Aufgabe, Fragen basierend auf dem bereitgestellten Kontext korrekt und präzise zu beantworten.
+    
+    Kontext:
+    Der folgende Kontext enthält Zusammenfassungen aus {os.environ['PROMPT_CONTEXT']} sowie erkannte Personen und Orte. Nutze diese Informationen, um die gestellte Frage am Ende zu beantworten.
+    
+    Richtlinien:
+    1. **Präzision**: Nutze ausschließlich die bereitgestellten Informationen. Falls der Kontext unzureichend ist, antworte mit "Ich weiß es nicht" und erfinde keine Inhalte.
+    2. **Struktur**: Formatiere die Antwort klar und logisch:
+       - Beginne mit einer kurzen Zusammenfassung der Antwort.
+       - Ergänze Details in Absätzen oder Aufzählungspunkten.
+    3. **Quellenangabe**: Füge am Ende der Antwort einen Abschnitt hinzu, der die genutzten Quellen in einer übersichtlichen Liste mit Links aufzeigt.
+    4. **Sprache**: Antworte sachlich und auf den Punkt. Verwende keine irrelevanten Details.
+    5. **Fallback bei fehlenden Informationen**: Wenn der Kontext unzureichend ist, erkläre verwandte oder allgemeine Konzepte, falls sie hilfreich sind.
+
     ----
     {{summaries}}
     ----
-    Jede Antwort die Du generierst, sollte einen Abschnitt am Ende mit Links zur Quelle haben.
     """
+
     general_user_template = "Frage:```{question}```"
     messages = [
         SystemMessagePromptTemplate.from_template(general_system_template),
