@@ -58,6 +58,17 @@ rag_chain = configure_qa_rag_chain(
 class QueueCallback(BaseCallbackHandler):
     """Callback handler for streaming LLM responses to a queue."""
 
+    def on_llm_start(
+        self, serialized: dict[str, any], prompts: list[str], **kwargs: any
+    ) -> any:
+        """Run when LLM starts running."""
+        print("##############Used Promts###################")
+        print(prompts)
+        print("############################################")
+        print("################# KW ARGS ##################")
+        print(kwargs)
+        print("############################################")
+
     def __init__(self, q):
         self.q = q
 
@@ -65,6 +76,9 @@ class QueueCallback(BaseCallbackHandler):
         self.q.put(token)
 
     def on_llm_end(self, *args, **kwargs) -> None:
+        return self.q.empty()
+    
+    def on_llm_error(self, *args, **kwargs) -> None:
         return self.q.empty()
 
 
